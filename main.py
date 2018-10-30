@@ -8,4 +8,4 @@ import tools
 import data
 
 if __name__ == '__main__':
-    print(tools.get_all_archive_links(data.URL))
+    print(tools.create_html_art_content(data.URL))
