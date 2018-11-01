@@ -13,6 +13,7 @@ def get_all_archive_links(link, number_of_subsites=14):
         p = ArchiveLinks(link, page)
         link_list += p.get_current_page_links()
     return link_list
+# functions below organize data from scrapped website and create html
 
 def create_html_comments(comments):
     new_comments = ''
@@ -22,16 +23,24 @@ def create_html_comments(comments):
         comment.get_username(), comment.get_comment_content())
     return new_comments
 
-def create_html_art_content(url):
+
+def create_html_art_content(url, till = 2):
     links = get_all_archive_links(url)
-    links = links[0:2]
+    links = links[0:till]
     new_page_content =''
+    new_table_of_content = ''
+    table_and_content = []
     for link in links:
         page = PageContent(link)
+        new_table_of_content += table_of_content(page.get_date(), page.get_title())
         new_page_content += article_header_content(page.get_date(),\
          page.get_title(), page.get_content())\
          + create_html_comments(page.get_comments())
-    print(new_page_content)
+    table_and_content.append(new_table_of_content)
+    table_and_content.append(new_page_content)
+    return table_and_content
+
+#functions below create html pieces for knigu
 
 def table_of_content(date,title):
     return """
@@ -39,7 +48,7 @@ def table_of_content(date,title):
         <div class="article-data">{date}
         </div>
         <div>............</div>
-        <div class="article-title"><a href="#{date}">{title}</a>
+        <div class="article-title"><a href="#{date}" class="tableLinks">{title}</a>
         </div>
     """.format(date=date, title=title)
 
@@ -74,26 +83,64 @@ def article_comments(comment_date, user, comment_content):
     <hr>
     <hr>""".format(comment_date=comment_date, user=user, comment_content=comment_content)
 
-def create_knigu():
+def create_base():
     return """<!DOCTYPE HTML>
-    <html lang="eng">
-    <head>
-        <meta charset="utf-8">
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <div class="content">
-            <div class="table-content" id="table">
+            <html lang="eng">
+            <head>
+                <meta charset="utf-8">
+                <link rel="stylesheet" href="style.css">
+            </head>
+            <body>
+                <div class="content" id="independenttraderScrappedBook">
+                    <div class="table-content" id="table">
+                        </div>
+                    <div class="content-article" id="art">
+                        </div>
                 </div>
-            <div class="content-article" id="art">
-                <div id="comments">
-                    </div>
-                </div>
-        </div>
-    </body>
-    </html>"""
+            </body>
+            </html>"""
 
-class PageContent():
+#funcions that organize and update content in Knigu
+def content_book_links(soup):
+    return len(soup.find_all(class_="tableLinks"))
+
+def diff_archiv_and_book(URL, soup):
+    return len(get_all_archive_links(URL)) - content_book_links(soup)
+
+def add_to_table(table_links, soup):
+    soup.find(id = "table").append(table_links)
+
+def add_to_content(content, soup):
+    soup.find(id = "art").append(content)
+
+def add_updated_data(table_links, content, soup):
+    add_to_table(table_links, soup)
+    add_to_content(content, soup)
+
+def update(URL, soup, till=2):
+    update_content = create_html_art_content(URL, till)
+    add_updated_data(update_content[0], update_content[1], soup)
+
+class Knigu:
+    URL = 'https://independenttrader.pl'
+
+    def __init__(self, content = create_base()):
+        self.content = content
+        if isinstance(self.content, str):
+            self.soup = BeautifulSoup(self.content, 'html.parser')
+        else:
+            self.soup = BeautifulSoup(self.content, 'html.parser')
+
+
+    def is_updated(self, URL, soup):
+        if diff_archiv_and_book(URL, soup) == 0:
+            return True
+        else:
+            return False
+
+
+class PageContent:
+
     def __init__(self, link):
         self.link = link
         self.pagelink = requests.get(self.link)
@@ -137,6 +184,7 @@ class PageComment:
         return comment_content
 
 class ArchiveLinks:
+
     def __init__(self, url, page = 1):
         self.url = url
         self.arch_url = '/archiwum.html'
