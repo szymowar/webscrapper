@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
+import html
 
 def is_string(s):
     return isinstance(s, str)
@@ -50,10 +51,12 @@ def table_of_content(date,title):
         <div>............</div>
         <div class="article-title"><a href="#{date}" class="tableLinks">{title}</a>
         </div>
+    </div>
     """.format(date=date, title=title)
 
 def article_header_content(date, title, article):
-    return """<div class="header header-art">
+    return """<br><br><div class="article">
+    <div class="header header-art">
     <div class="article-data">{date}
     </div>
     <div>-</div>
@@ -62,7 +65,7 @@ def article_header_content(date, title, article):
 </div>
 <br>
 <br>
-<div class="article" >
+<div class="article-content" >
     {article}
     </div>
 <hr>
@@ -81,7 +84,8 @@ def article_comments(comment_date, user, comment_content):
         {comment_content}
     </div>
     <hr>
-    <hr>""".format(comment_date=comment_date, user=user, comment_content=comment_content)
+    <hr>
+    </div>""".format(comment_date=comment_date, user=user, comment_content=comment_content)
 
 def create_base():
     return """<!DOCTYPE HTML>
@@ -94,7 +98,7 @@ def create_base():
                 <div class="content" id="independenttraderScrappedBook">
                     <div class="table-content" id="table">
                         </div>
-                    <div class="content-article" id="art">
+                    <div class="article" id="art">
                         </div>
                 </div>
             </body>
@@ -121,16 +125,19 @@ def update(URL, soup, till=2):
     update_content = create_html_art_content(URL, till)
     add_updated_data(update_content[0], update_content[1], soup)
 
+#write content to file
+def write_to_file(url, markup, input_file):
+    update(url, markup, diff_archiv_and_book(url, markup))
+    book = open(input_file, "w", encoding = 'utf-8')
+    book.write(html.unescape(str(markup)))
+    book.close()
+
 class Knigu:
     URL = 'https://independenttrader.pl'
 
     def __init__(self, content = create_base()):
         self.content = content
-        if isinstance(self.content, str):
-            self.soup = BeautifulSoup(self.content, 'html.parser')
-        else:
-            self.soup = BeautifulSoup(self.content, 'html.parser')
-
+        self.soup = BeautifulSoup(self.content, 'html.parser')
 
     def is_updated(self, URL, soup):
         if diff_archiv_and_book(URL, soup) == 0:
@@ -185,11 +192,11 @@ class PageComment:
 
 class ArchiveLinks:
 
-    def __init__(self, url, page = 1):
+    def __init__(self, url, page):
         self.url = url
         self.arch_url = '/archiwum.html'
         self.page = '?page=' + str(page)
-        self.pagelink = requests.get(self.url + self.arch_url)
+        self.pagelink = requests.get(self.url + self.arch_url + self.page)
         self.soup = BeautifulSoup(self.pagelink.text, 'html.parser')
 
 

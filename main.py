@@ -8,6 +8,7 @@ import tools
 import data
 import sys
 import os
+import html
 
 
 if __name__ == '__main__':
@@ -20,9 +21,9 @@ if __name__ == '__main__':
     if os.path.isfile(input_file) == True:
         print("Checking if updated")
         book = open(input_file, "r", encoding = 'utf-8')
-        markup = tools.Knigu(book)
+        old_book = tools.Knigu(book)
         book.close()
-        if markup.is_updated(data.URL, markup.soup):
+        if old_book.is_updated(data.URL, old_book.soup):
             print("File is up to date")
             sys.exit(1)
         else:
@@ -31,10 +32,7 @@ if __name__ == '__main__':
             user_input = input()
             if user_input == "y":
                 print("Book being updated...")
-                tools.update(data.URL, markup.soup)
-                book = open(input_file, 'w', encoding = "utf-8")
-                book.write(str(markup.soup))
-                book.close()
+                tools.write_to_file(data.URL, old_book.soup, input_file)
                 print("Updated!")
                 sys.exit(1)
             print("Good bye")
@@ -44,7 +42,8 @@ if __name__ == '__main__':
         user_input = input()
         if user_input == "y":
             new_book = tools.Knigu()
-            print(new_book.content)
+            tools.write_to_file(data.URL, new_book.soup, input_file)
+            print("Book created and up to date.")
             sys.exit(1)
         print("Good bye.")
         sys.exit(1)

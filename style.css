@@ -1,3 +1,10 @@
 .records{
     display: flex;
 }
+.header{
+    display: flex;
+    font-weight: bold;
+}
+.article-title{
+    font-size: 18px;
+}
